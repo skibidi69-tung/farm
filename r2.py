@@ -96,9 +96,9 @@ class Grad:
 # proto: http/https -> http:// ; socks4 -> socks4:// ; socks5 -> socks5://
 # Giới hạn mỗi nguồn + tổng để giữ tốc độ lọc sống
 
-MAX_PER_SOURCE = 1500
+MAX_PER_SOURCE = 15000000
 MAX_TOTAL = 60000
-MAX_FILTER = 15000  # giới hạn số proxy đem đi lọc sống mỗi cycle (cân bằng theo nguồn)
+MAX_FILTER = 15000000  # giới hạn số proxy đem đi lọc sống mỗi cycle (cân bằng theo nguồn)
 
 ALL_PROXY_SOURCES = [
     {'name': 'ALIILAPRO HTTP', 'url': '@url:`https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/http.txt`', 'proto': 'http'}, 
