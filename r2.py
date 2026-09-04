@@ -93,174 +93,199 @@ class Grad:
         return Grad._rgb(60, 255, int(200 * (1 - (percent - 66) / 34)))
 
 # ==================== PROXY SOURCES ====================
-# proto: http/https -> http:// ; socks4 -> socks4:// ; socks5 -> socks5://
-# Giới hạn mỗi nguồn + tổng để giữ tốc độ lọc sống
-
-MAX_PER_SOURCE = 1500
-MAX_TOTAL = 60000
-MAX_FILTER = 15000  # giới hạn số proxy đem đi lọc sống mỗi cycle (cân bằng theo nguồn)
-
-GITHUB_SOURCES = [
-    # ---- tổng hợp lớn ----
-    {"name": "zevtyardt ALL", "url": "https://proxylist.zevtyardt.com/get_all?format=text", "proto": "http"},
-    {"name": "TheSpeedX HTTP", "url": "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt", "proto": "http"},
-    {"name": "TheSpeedX SOCKS4", "url": "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks4.txt", "proto": "socks4"},
-    {"name": "TheSpeedX SOCKS5", "url": "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt", "proto": "socks5"},
-    {"name": "monosans HTTP", "url": "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt", "proto": "http"},
-    {"name": "monosans SOCKS4", "url": "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks4.txt", "proto": "socks4"},
-    {"name": "monosans SOCKS5", "url": "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks5.txt", "proto": "socks5"},
-    {"name": "monosans ALL", "url": "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/all.txt", "proto": "http"},
-    {"name": "jetkai HTTP", "url": "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-http.txt", "proto": "http"},
-    {"name": "jetkai HTTPS", "url": "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-https.txt", "proto": "http"},
-    {"name": "jetkai SOCKS4", "url": "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks4.txt", "proto": "socks4"},
-    {"name": "jetkai SOCKS5", "url": "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks5.txt", "proto": "socks5"},
-    {"name": "clarketm", "url": "https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt", "proto": "http"},
-    {"name": "roosterkid ALL", "url": "https://raw.githubusercontent.com/roosterkid/openproxylist/main/ALL.txt", "proto": "http"},
-    {"name": "roosterkid HTTPS", "url": "https://raw.githubusercontent.com/roosterkid/openproxylist/main/HTTPS.txt", "proto": "http"},
-    {"name": "roosterkid SOCKS4", "url": "https://raw.githubusercontent.com/roosterkid/openproxylist/main/SOCKS4.txt", "proto": "socks4"},
-    {"name": "roosterkid SOCKS5", "url": "https://raw.githubusercontent.com/roosterkid/openproxylist/main/SOCKS5.txt", "proto": "socks5"},
-    {"name": "proxifly ALL", "url": "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/all/data.txt", "proto": "http"},
-    {"name": "proxifly HTTP", "url": "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/http/data.txt", "proto": "http"},
-    {"name": "proxifly SOCKS4", "url": "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/socks4/data.txt", "proto": "socks4"},
-    {"name": "proxifly SOCKS5", "url": "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/socks5/data.txt", "proto": "socks5"},
-    {"name": "mzyui ALL", "url": "https://raw.githubusercontent.com/mzyui/proxy-list/main/all.txt", "proto": "http"},
-    {"name": "mzyui HTTP", "url": "https://raw.githubusercontent.com/mzyui/proxy-list/main/http.txt", "proto": "http"},
-    {"name": "mzyui SOCKS4", "url": "https://raw.githubusercontent.com/mzyui/proxy-list/main/socks4.txt", "proto": "socks4"},
-    {"name": "mzyui SOCKS5", "url": "https://raw.githubusercontent.com/mzyui/proxy-list/main/socks5.txt", "proto": "socks5"},
-    {"name": "Thordata ALL", "url": "https://raw.githubusercontent.com/Thordata/awesome-free-proxy-list/main/proxies/all.txt", "proto": "http"},
-    {"name": "Thordata HTTP", "url": "https://raw.githubusercontent.com/Thordata/awesome-free-proxy-list/main/proxies/http.txt", "proto": "http"},
-    {"name": "Thordata SOCKS4", "url": "https://raw.githubusercontent.com/Thordata/awesome-free-proxy-list/main/proxies/socks4.txt", "proto": "socks4"},
-    {"name": "Thordata SOCKS5", "url": "https://raw.githubusercontent.com/Thordata/awesome-free-proxy-list/main/proxies/socks5.txt", "proto": "socks5"},
-    {"name": "zevtyardt HTTP", "url": "https://raw.githubusercontent.com/zevtyardt/proxy-list/main/http.txt", "proto": "http"},
-    {"name": "zevtyardt SOCKS4", "url": "https://raw.githubusercontent.com/zevtyardt/proxy-list/main/socks4.txt", "proto": "socks4"},
-    {"name": "zevtyardt SOCKS5", "url": "https://raw.githubusercontent.com/zevtyardt/proxy-list/main/socks5.txt", "proto": "socks5"},
-    # ---- trong r.txt còn thiếu ----
-    {"name": "hookzof SOCKS5", "url": "https://raw.githubusercontent.com/hookzof/socks5_list/master/proxy.txt", "proto": "socks5"},
-    {"name": "Anonym0usWork HTTP", "url": "https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/http_proxies.txt", "proto": "http"},
-    {"name": "Anonym0usWork SOCKS4", "url": "https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/socks4_proxies.txt", "proto": "socks4"},
-    {"name": "Anonym0usWork SOCKS5", "url": "https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/socks5_proxies.txt", "proto": "socks5"},
-    {"name": "VPSLab http_all", "url": "https://raw.githubusercontent.com/VPSLabCloud/VPSLab-Free-Proxy-List/main/http_all.txt", "proto": "http"},
-    {"name": "VPSLab http_ssl", "url": "https://raw.githubusercontent.com/VPSLabCloud/VPSLab-Free-Proxy-List/main/http_ssl.txt", "proto": "http"},
-    {"name": "VPSLab socks4", "url": "https://raw.githubusercontent.com/VPSLabCloud/VPSLab-Free-Proxy-List/main/socks4_all.txt", "proto": "socks4"},
-    {"name": "VPSLab socks5", "url": "https://raw.githubusercontent.com/VPSLabCloud/VPSLab-Free-Proxy-List/main/socks5_all.txt", "proto": "socks5"},
-    {"name": "ProxyScraper http", "url": "https://raw.githubusercontent.com/ProxyScraper/ProxyScraper/main/http.txt", "proto": "http"},
-    {"name": "ProxyScraper sock4", "url": "https://raw.githubusercontent.com/ProxyScraper/ProxyScraper/main/sock4.txt", "proto": "socks4"},
-    {"name": "ProxyScraper sock5", "url": "https://raw.githubusercontent.com/ProxyScraper/ProxyScraper/main/sock5.txt", "proto": "socks5"},
-    {"name": "pscrape-free HTTP", "url": "https://cdn.jsdelivr.net/gh/proxyscrape/free-proxy-list@main/proxies/protocols/http/data.txt", "proto": "http"},
-    {"name": "pscrape-free SOCKS4", "url": "https://cdn.jsdelivr.net/gh/proxyscrape/free-proxy-list@main/proxies/protocols/socks4/data.txt", "proto": "socks4"},
-    {"name": "pscrape-free SOCKS5", "url": "https://cdn.jsdelivr.net/gh/proxyscrape/free-proxy-list@main/proxies/protocols/socks5/data.txt", "proto": "socks5"},
-    {"name": "pscrape-free ALL", "url": "https://cdn.jsdelivr.net/gh/proxyscrape/free-proxy-list@main/proxies/all/data.txt", "proto": "http"},
-    {"name": "hproxy ALL", "url": "https://raw.githubusercontent.com/hproxy-com/free-proxy-list/main/all.txt", "proto": "http"},
-    {"name": "openproxylist HTTP", "url": "https://openproxylist.xyz/http.txt", "proto": "http"},
-    {"name": "openproxylist SOCKS4", "url": "https://openproxylist.xyz/socks4.txt", "proto": "socks4"},
-    {"name": "openproxylist SOCKS5", "url": "https://openproxylist.xyz/socks5.txt", "proto": "socks5"},
-    {"name": "iplocate HTTP", "url": "https://raw.githubusercontent.com/iplocate/free-proxy-list/main/protocols/http.txt", "proto": "http"},
-    {"name": "iplocate SOCKS4", "url": "https://raw.githubusercontent.com/iplocate/free-proxy-list/main/protocols/socks4.txt", "proto": "socks4"},
-    {"name": "iplocate SOCKS5", "url": "https://raw.githubusercontent.com/iplocate/free-proxy-list/main/protocols/socks5.txt", "proto": "socks5"},
-    {"name": "ShiftyTR HTTP", "url": "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/http.txt", "proto": "http"},
-    {"name": "ShiftyTR HTTPS", "url": "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/https.txt", "proto": "http"},
-    {"name": "ShiftyTR SOCKS4", "url": "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/socks4.txt", "proto": "socks4"},
-    {"name": "ShiftyTR SOCKS5", "url": "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/socks5.txt", "proto": "socks5"},
-    {"name": "fyvri HTTP", "url": "https://raw.githubusercontent.com/fyvri/fresh-proxy-list/main/http.txt", "proto": "http"},
-    {"name": "fyvri SOCKS4", "url": "https://raw.githubusercontent.com/fyvri/fresh-proxy-list/main/socks4.txt", "proto": "socks4"},
-    {"name": "fyvri SOCKS5", "url": "https://raw.githubusercontent.com/fyvri/fresh-proxy-list/main/socks5.txt", "proto": "socks5"},
-    {"name": "vmheaven HTTP", "url": "https://raw.githubusercontent.com/vmheaven/VMHeaven-Free-Proxy-Updated/main/http.txt", "proto": "http"},
-    {"name": "vmheaven SOCKS4", "url": "https://raw.githubusercontent.com/vmheaven/VMHeaven-Free-Proxy-Updated/main/socks4.txt", "proto": "socks4"},
-    {"name": "vmheaven SOCKS5", "url": "https://raw.githubusercontent.com/vmheaven/VMHeaven-Free-Proxy-Updated/main/socks5.txt", "proto": "socks5"},
-    {"name": "databay ALL", "url": "https://cdn.jsdelivr.net/gh/databay-labs/free-proxy-list@main/proxies/all.txt", "proto": "http"},
-    {"name": "sunny9577", "url": "https://raw.githubusercontent.com/sunny9577/proxy-scraper/master/proxies.txt", "proto": "http"},
-    {"name": "KangProxy HTTP", "url": "https://raw.githubusercontent.com/officialputuid/KangProxy/KangProxy/http/http.txt", "proto": "http"},
-    {"name": "KangProxy SOCKS4", "url": "https://raw.githubusercontent.com/officialputuid/KangProxy/KangProxy/socks4/socks4.txt", "proto": "socks4"},
-    {"name": "KangProxy SOCKS5", "url": "https://raw.githubusercontent.com/officialputuid/KangProxy/KangProxy/socks5/socks5.txt", "proto": "socks5"},
-    # ---- nguồn thêm mới ----
-    {"name": "zloi-user HTTP", "url": "https://raw.githubusercontent.com/zloi-user/hideip.me/main/http.txt", "proto": "http"},
-    {"name": "zloi-user HTTPS", "url": "https://raw.githubusercontent.com/zloi-user/hideip.me/main/https.txt", "proto": "http"},
-    {"name": "zloi-user SOCKS4", "url": "https://raw.githubusercontent.com/zloi-user/hideip.me/main/socks4.txt", "proto": "socks4"},
-    {"name": "zloi-user SOCKS5", "url": "https://raw.githubusercontent.com/zloi-user/hideip.me/main/socks5.txt", "proto": "socks5"},
-    {"name": "mmpx12 HTTP", "url": "https://raw.githubusercontent.com/mmpx12/proxy-list/master/http.txt", "proto": "http"},
-    {"name": "mmpx12 HTTPS", "url": "https://raw.githubusercontent.com/mmpx12/proxy-list/master/https.txt", "proto": "http"},
-    {"name": "mmpx12 SOCKS4", "url": "https://raw.githubusercontent.com/mmpx12/proxy-list/master/socks4.txt", "proto": "socks4"},
-    {"name": "mmpx12 SOCKS5", "url": "https://raw.githubusercontent.com/mmpx12/proxy-list/master/socks5.txt", "proto": "socks5"},
-    {"name": "UptimerBot HTTP", "url": "https://raw.githubusercontent.com/UptimerBot/proxy-list/main/proxies/http.txt", "proto": "http"},
-    {"name": "AshiqAmir HTTP", "url": "https://raw.githubusercontent.com/AshiqAmir/Proxy-List/main/http.txt", "proto": "http"},
-    {"name": "saisuiu HTTP", "url": "https://raw.githubusercontent.com/saisuiu/uiu/master/http.txt", "proto": "http"},
-    {"name": "ErcinDedeoglu", "url": "https://raw.githubusercontent.com/ErcinDedeoglu/proxies/main/proxies.txt", "proto": "http"},
-    {"name": "proxy4parsing", "url": "https://raw.githubusercontent.com/proxy4parsing/proxy-list/main/proxies.txt", "proto": "http"},
-    {"name": "prxchk HTTP", "url": "https://raw.githubusercontent.com/prxchk/proxy-list/main/http.txt", "proto": "http"},
-    {"name": "yuceltoluyag", "url": "https://raw.githubusercontent.com/yuceltoluyag/GoodProxy/main/proxies.txt", "proto": "http"},
-    {"name": "B4RC0DE HTTP", "url": "https://raw.githubusercontent.com/B4RC0DE-TM/proxy-list/main/HTTP.txt", "proto": "http"},
-    {"name": "Lux-AiR HTTP", "url": "https://raw.githubusercontent.com/Lux-AiR/ProxyList/main/http.txt", "proto": "http"},
-    {"name": "topicality", "url": "https://raw.githubusercontent.com/topicality/proxy-list/main/proxy-list/data.txt", "proto": "http"},
-    {"name": "mahmoudgalal2", "url": "https://raw.githubusercontent.com/mahmoudgalal2/proxy-list/master/proxylist.txt", "proto": "http"},
-    {"name": "rwvch HTTP", "url": "https://raw.githubusercontent.com/rwvch/Proxy/master/proxy.txt", "proto": "http"},
-    {"name": "webhooksite HTTP", "url": "https://raw.githubusercontent.com/webhooksite/proxy-list/main/http.txt", "proto": "http"},
-    {"name": "rickwang888 HTTP", "url": "https://raw.githubusercontent.com/rickwang888/proxylist/main/http.txt", "proto": "http"},
-    {"name": "Staawik HTTP", "url": "https://raw.githubusercontent.com/Staawik/ProxyList/main/http.txt", "proto": "http"},
+# Tong cong: 190 nguon proxy
+ALL_PROXY_SOURCES = [
+    {'name': 'ProxyScrape VN all', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=VN&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'ProxyScrape VN http', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=VN&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'ProxyScrape VN socks4', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks4&timeout=10000&country=VN&ssl=all&anonymity=all', 'proto': 'socks4'},
+    {'name': 'ProxyScrape VN socks5', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=10000&country=VN&ssl=all&anonymity=all', 'proto': 'socks5'},
+    {'name': 'ProxyScrape V3 VN all', 'url': 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&country=VN&timeout=10000&protocol=all', 'proto': 'http'},
+    {'name': 'Geonode VN', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc&country=VN', 'proto': 'http'},
+    {'name': 'ProxyList.download VN http', 'url': 'https://www.proxy-list.download/api/v1/get?type=http&country=VN', 'proto': 'http'},
+    {'name': 'ProxyList.download VN socks4', 'url': 'https://www.proxy-list.download/api/v1/get?type=socks4&country=VN', 'proto': 'socks4'},
+    {'name': 'ProxyList.download VN socks5', 'url': 'https://www.proxy-list.download/api/v1/get?type=socks5&country=VN', 'proto': 'socks5'},
+    {'name': 'PubProxy VN', 'url': 'http://pubproxy.com/api/proxy?country=VN&limit=20&format=txt', 'proto': 'http'},
+    {'name': 'CoolProxy VN', 'url': 'https://cool-proxy.net/proxies.json?country=VN', 'proto': 'http'},
+    {'name': 'Spys.one VN', 'url': 'https://spys.one/free-proxy-list/VN/', 'proto': 'http'},
+    {'name': 'HideMyName VN', 'url': 'https://hidemy.name/en/proxy-list/?country=VN', 'proto': 'http'},
+    {'name': 'ProxyNova VN', 'url': 'https://www.proxynova.com/proxy-server-list/country-vn/', 'proto': 'http'},
+    {'name': 'FreeProxy World VN', 'url': 'https://www.freeproxy.world/?country=VN&type=http&page=1', 'proto': 'http'},
+    {'name': 'TheSpeedX HTTP', 'url': 'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt', 'proto': 'http'},
+    {'name': 'TheSpeedX SOCKS4', 'url': 'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks4.txt', 'proto': 'socks4'},
+    {'name': 'TheSpeedX SOCKS5', 'url': 'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt', 'proto': 'socks5'},
+    {'name': 'monosans HTTP', 'url': 'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt', 'proto': 'http'},
+    {'name': 'monosans SOCKS4', 'url': 'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks4.txt', 'proto': 'socks4'},
+    {'name': 'monosans SOCKS5', 'url': 'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks5.txt', 'proto': 'socks5'},
+    {'name': 'monosans ALL', 'url': 'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/all.txt', 'proto': 'http'},
+    {'name': 'jetkai HTTP', 'url': 'https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-http.txt', 'proto': 'http'},
+    {'name': 'jetkai HTTPS', 'url': 'https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-https.txt', 'proto': 'http'},
+    {'name': 'jetkai SOCKS4', 'url': 'https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks4.txt', 'proto': 'socks4'},
+    {'name': 'jetkai SOCKS5', 'url': 'https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks5.txt', 'proto': 'socks5'},
+    {'name': 'ShiftyTR HTTP', 'url': 'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/http.txt', 'proto': 'http'},
+    {'name': 'ShiftyTR HTTPS', 'url': 'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/https.txt', 'proto': 'http'},
+    {'name': 'ShiftyTR SOCKS4', 'url': 'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/socks4.txt', 'proto': 'socks4'},
+    {'name': 'ShiftyTR SOCKS5', 'url': 'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/socks5.txt', 'proto': 'socks5'},
+    {'name': 'clarketm', 'url': 'https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt', 'proto': 'http'},
+    {'name': 'hookzof SOCKS5', 'url': 'https://raw.githubusercontent.com/hookzof/socks5_list/master/proxy.txt', 'proto': 'socks5'},
+    {'name': 'sunny9577', 'url': 'https://raw.githubusercontent.com/sunny9577/proxy-scraper/master/proxies.txt', 'proto': 'http'},
+    {'name': 'roosterkid HTTPS', 'url': 'https://raw.githubusercontent.com/roosterkid/openproxylist/main/HTTPS.txt', 'proto': 'http'},
+    {'name': 'roosterkid SOCKS5', 'url': 'https://raw.githubusercontent.com/roosterkid/openproxylist/main/SOCKS5.txt', 'proto': 'socks5'},
+    {'name': 'proxifly ALL', 'url': 'https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/all/data.txt', 'proto': 'http'},
+    {'name': 'proxifly HTTP', 'url': 'https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/http/data.txt', 'proto': 'http'},
+    {'name': 'proxifly SOCKS4', 'url': 'https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/socks4/data.txt', 'proto': 'socks4'},
+    {'name': 'proxifly SOCKS5', 'url': 'https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/socks5/data.txt', 'proto': 'socks5'},
+    {'name': 'Anonym0usWork HTTP', 'url': 'https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/http_proxies.txt', 'proto': 'http'},
+    {'name': 'Anonym0usWork SOCKS4', 'url': 'https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/socks4_proxies.txt', 'proto': 'socks4'},
+    {'name': 'Anonym0usWork SOCKS5', 'url': 'https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/socks5_proxies.txt', 'proto': 'socks5'},
+    {'name': 'VPSLab http_all', 'url': 'https://raw.githubusercontent.com/VPSLabCloud/VPSLab-Free-Proxy-List/main/http_all.txt', 'proto': 'http'},
+    {'name': 'VPSLab http_ssl', 'url': 'https://raw.githubusercontent.com/VPSLabCloud/VPSLab-Free-Proxy-List/main/http_ssl.txt', 'proto': 'http'},
+    {'name': 'VPSLab socks4', 'url': 'https://raw.githubusercontent.com/VPSLabCloud/VPSLab-Free-Proxy-List/main/socks4_all.txt', 'proto': 'socks4'},
+    {'name': 'VPSLab socks5', 'url': 'https://raw.githubusercontent.com/VPSLabCloud/VPSLab-Free-Proxy-List/main/socks5_all.txt', 'proto': 'socks5'},
+    {'name': 'mzyui ALL', 'url': 'https://raw.githubusercontent.com/mzyui/proxy-list/main/all.txt', 'proto': 'http'},
+    {'name': 'mzyui HTTP', 'url': 'https://raw.githubusercontent.com/mzyui/proxy-list/main/http.txt', 'proto': 'http'},
+    {'name': 'mzyui SOCKS4', 'url': 'https://raw.githubusercontent.com/mzyui/proxy-list/main/socks4.txt', 'proto': 'socks4'},
+    {'name': 'mzyui SOCKS5', 'url': 'https://raw.githubusercontent.com/mzyui/proxy-list/main/socks5.txt', 'proto': 'socks5'},
+    {'name': 'Thordata ALL', 'url': 'https://raw.githubusercontent.com/Thordata/awesome-free-proxy-list/main/proxies/all.txt', 'proto': 'http'},
+    {'name': 'Thordata HTTP', 'url': 'https://raw.githubusercontent.com/Thordata/awesome-free-proxy-list/main/proxies/http.txt', 'proto': 'http'},
+    {'name': 'Thordata SOCKS4', 'url': 'https://raw.githubusercontent.com/Thordata/awesome-free-proxy-list/main/proxies/socks4.txt', 'proto': 'socks4'},
+    {'name': 'Thordata SOCKS5', 'url': 'https://raw.githubusercontent.com/Thordata/awesome-free-proxy-list/main/proxies/socks5.txt', 'proto': 'socks5'},
+    {'name': 'ProxyScraper http', 'url': 'https://raw.githubusercontent.com/ProxyScraper/ProxyScraper/main/http.txt', 'proto': 'http'},
+    {'name': 'ProxyScraper sock4', 'url': 'https://raw.githubusercontent.com/ProxyScraper/ProxyScraper/main/sock4.txt', 'proto': 'socks4'},
+    {'name': 'ProxyScraper sock5', 'url': 'https://raw.githubusercontent.com/ProxyScraper/ProxyScraper/main/sock5.txt', 'proto': 'socks5'},
+    {'name': 'proxyscrape free-proxy-list ALL', 'url': 'https://cdn.jsdelivr.net/gh/proxyscrape/free-proxy-list@main/proxies/all/data.txt', 'proto': 'http'},
+    {'name': 'proxyscrape free-proxy-list HTTP', 'url': 'https://cdn.jsdelivr.net/gh/proxyscrape/free-proxy-list@main/proxies/protocols/http/data.txt', 'proto': 'http'},
+    {'name': 'proxyscrape free-proxy-list SOCKS4', 'url': 'https://cdn.jsdelivr.net/gh/proxyscrape/free-proxy-list@main/proxies/protocols/socks4/data.txt', 'proto': 'socks4'},
+    {'name': 'proxyscrape free-proxy-list SOCKS5', 'url': 'https://cdn.jsdelivr.net/gh/proxyscrape/free-proxy-list@main/proxies/protocols/socks5/data.txt', 'proto': 'socks5'},
+    {'name': 'hproxy ALL', 'url': 'https://raw.githubusercontent.com/hproxy-com/free-proxy-list/main/all.txt', 'proto': 'http'},
+    {'name': 'openproxylist HTTP', 'url': 'https://openproxylist.xyz/http.txt', 'proto': 'http'},
+    {'name': 'openproxylist SOCKS4', 'url': 'https://openproxylist.xyz/socks4.txt', 'proto': 'socks4'},
+    {'name': 'openproxylist SOCKS5', 'url': 'https://openproxylist.xyz/socks5.txt', 'proto': 'socks5'},
+    {'name': 'iplocate HTTP', 'url': 'https://raw.githubusercontent.com/iplocate/free-proxy-list/main/protocols/http.txt', 'proto': 'http'},
+    {'name': 'iplocate SOCKS4', 'url': 'https://raw.githubusercontent.com/iplocate/free-proxy-list/main/protocols/socks4.txt', 'proto': 'socks4'},
+    {'name': 'iplocate SOCKS5', 'url': 'https://raw.githubusercontent.com/iplocate/free-proxy-list/main/protocols/socks5.txt', 'proto': 'socks5'},
+    {'name': 'fyvri HTTP', 'url': 'https://raw.githubusercontent.com/fyvri/fresh-proxy-list/main/http.txt', 'proto': 'http'},
+    {'name': 'fyvri SOCKS4', 'url': 'https://raw.githubusercontent.com/fyvri/fresh-proxy-list/main/socks4.txt', 'proto': 'socks4'},
+    {'name': 'fyvri SOCKS5', 'url': 'https://raw.githubusercontent.com/fyvri/fresh-proxy-list/main/socks5.txt', 'proto': 'socks5'},
+    {'name': 'vmheaven HTTP', 'url': 'https://raw.githubusercontent.com/vmheaven/VMHeaven-Free-Proxy-Updated/main/http.txt', 'proto': 'http'},
+    {'name': 'vmheaven SOCKS4', 'url': 'https://raw.githubusercontent.com/vmheaven/VMHeaven-Free-Proxy-Updated/main/socks4.txt', 'proto': 'socks4'},
+    {'name': 'vmheaven SOCKS5', 'url': 'https://raw.githubusercontent.com/vmheaven/VMHeaven-Free-Proxy-Updated/main/socks5.txt', 'proto': 'socks5'},
+    {'name': 'databay ALL', 'url': 'https://cdn.jsdelivr.net/gh/databay-labs/free-proxy-list@main/proxies/all.txt', 'proto': 'http'},
+    {'name': 'ProxyScrape v2 ALL', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=all&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'ProxyScrape v2 HTTP', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'ProxyScrape v2 SOCKS4', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks4&timeout=10000&country=all&ssl=all&anonymity=all', 'proto': 'socks4'},
+    {'name': 'ProxyScrape v2 SOCKS5', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=10000&country=all&ssl=all&anonymity=all', 'proto': 'socks5'},
+    {'name': 'ProxyScrape v3 ALL', 'url': 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&timeout=10000&protocol=all', 'proto': 'http'},
+    {'name': 'ProxyScrape v4', 'url': 'https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&proxy_format=ipport&format=text', 'proto': 'http'},
+    {'name': 'Geonode global HTTP', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc&protocols=http%2Chttps', 'proto': 'http'},
+    {'name': 'Geonode global SOCKS', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc&protocols=socks4%2Csocks5', 'proto': 'socks5'},
+    {'name': 'ProxyList.download HTTP', 'url': 'https://www.proxy-list.download/api/v1/get?type=http', 'proto': 'http'},
+    {'name': 'ProxyList.download HTTPS', 'url': 'https://www.proxy-list.download/api/v1/get?type=https', 'proto': 'http'},
+    {'name': 'ProxyList.download SOCKS4', 'url': 'https://www.proxy-list.download/api/v1/get?type=socks4', 'proto': 'socks4'},
+    {'name': 'ProxyList.download SOCKS5', 'url': 'https://www.proxy-list.download/api/v1/get?type=socks5', 'proto': 'socks5'},
+    {'name': 'PubProxy random', 'url': 'http://pubproxy.com/api/proxy?limit=20&format=txt', 'proto': 'http'},
+    {'name': 'HProxy', 'url': 'https://hproxy.com/api/proxy-list?format=txt', 'proto': 'http'},
+    {'name': 'Databay', 'url': 'https://databay.com/api/v1/proxy-list?format=txt&limit=1000', 'proto': 'http'},
+    {'name': 'CoolProxy global', 'url': 'https://cool-proxy.net/proxies.json', 'proto': 'http'},
+    {'name': 'free-proxy-list.net', 'url': 'https://free-proxy-list.net/', 'proto': 'http'},
+    {'name': 'sslproxies.org', 'url': 'https://www.sslproxies.org/', 'proto': 'http'},
+    {'name': 'us-proxy.org', 'url': 'https://www.us-proxy.org/', 'proto': 'http'},
+    {'name': 'socks-proxy.net', 'url': 'https://www.socks-proxy.net/', 'proto': 'http'},
+    {'name': 'spys.one HTTP', 'url': 'https://spys.one/en/http-proxy-list/', 'proto': 'http'},
+    {'name': 'spys.one SOCKS', 'url': 'https://spys.one/en/socks-proxy-list/', 'proto': 'http'},
+    {'name': 'hidemy.name HTTP', 'url': 'https://hidemy.name/en/proxy-list/?type=hs', 'proto': 'http'},
+    {'name': 'hidemy.name SOCKS', 'url': 'https://hidemy.name/en/proxy-list/?type=45', 'proto': 'http'},
+    {'name': 'proxynova global', 'url': 'https://www.proxynova.com/proxy-server-list/', 'proto': 'http'},
+    {'name': 'proxylistplus HTTP1', 'url': 'https://list.proxylistplus.com/Fresh-HTTP-Proxy-List-1', 'proto': 'http'},
+    {'name': 'proxylistplus HTTP2', 'url': 'https://list.proxylistplus.com/Fresh-HTTP-Proxy-List-2', 'proto': 'http'},
+    {'name': 'proxylistplus SSL', 'url': 'https://list.proxylistplus.com/SSL-List-1', 'proto': 'http'},
+    {'name': 'proxylistplus SOCKS', 'url': 'https://list.proxylistplus.com/SOCKS-List-1', 'proto': 'http'},
+    {'name': 'free-proxy.cz', 'url': 'http://free-proxy.cz/en/proxylist/country/all/http/ping/all', 'proto': 'http'},
+    {'name': 'proxydb', 'url': 'https://proxydb.net/?protocol=http&protocol=https&protocol=socks4&protocol=socks5', 'proto': 'socks5'},
+    {'name': 'ProxyScrape US', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=US&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode US', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=US', 'proto': 'http'},
+    {'name': 'ProxyScrape CN', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=CN&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode CN', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=CN', 'proto': 'http'},
+    {'name': 'ProxyScrape ID', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=ID&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode ID', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=ID', 'proto': 'http'},
+    {'name': 'ProxyScrape BR', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=BR&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode BR', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=BR', 'proto': 'http'},
+    {'name': 'ProxyScrape IN', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=IN&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode IN', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=IN', 'proto': 'http'},
+    {'name': 'ProxyScrape RU', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=RU&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode RU', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=RU', 'proto': 'http'},
+    {'name': 'ProxyScrape DE', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=DE&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode DE', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=DE', 'proto': 'http'},
+    {'name': 'ProxyScrape FR', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=FR&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode FR', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=FR', 'proto': 'http'},
+    {'name': 'ProxyScrape GB', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=GB&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode GB', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=GB', 'proto': 'http'},
+    {'name': 'ProxyScrape JP', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=JP&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode JP', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=JP', 'proto': 'http'},
+    {'name': 'ProxyScrape KR', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=KR&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode KR', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=KR', 'proto': 'http'},
+    {'name': 'ProxyScrape TH', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=TH&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode TH', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=TH', 'proto': 'http'},
+    {'name': 'ProxyScrape MY', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=MY&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode MY', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=MY', 'proto': 'http'},
+    {'name': 'ProxyScrape SG', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=SG&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode SG', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=SG', 'proto': 'http'},
+    {'name': 'ProxyScrape PH', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=PH&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode PH', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=PH', 'proto': 'http'},
+    {'name': 'ProxyScrape BD', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=BD&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode BD', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=BD', 'proto': 'http'},
+    {'name': 'ProxyScrape PK', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=PK&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode PK', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=PK', 'proto': 'http'},
+    {'name': 'ProxyScrape TR', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=TR&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode TR', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=TR', 'proto': 'http'},
+    {'name': 'ProxyScrape UA', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=UA&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode UA', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=UA', 'proto': 'http'},
+    {'name': 'ProxyScrape MX', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=MX&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode MX', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=MX', 'proto': 'http'},
+    {'name': 'ProxyScrape AR', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=AR&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode AR', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=AR', 'proto': 'http'},
+    {'name': 'ProxyScrape CL', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=CL&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode CL', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=CL', 'proto': 'http'},
+    {'name': 'ProxyScrape CO', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=CO&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode CO', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=CO', 'proto': 'http'},
+    {'name': 'ProxyScrape ZA', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=ZA&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode ZA', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=ZA', 'proto': 'http'},
+    {'name': 'ProxyScrape EG', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=EG&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode EG', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=EG', 'proto': 'http'},
+    {'name': 'ProxyScrape NG', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=NG&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode NG', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=NG', 'proto': 'http'},
+    {'name': 'ProxyScrape IT', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=IT&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode IT', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=IT', 'proto': 'http'},
+    {'name': 'ProxyScrape ES', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=ES&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode ES', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=ES', 'proto': 'http'},
+    {'name': 'ProxyScrape NL', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=NL&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode NL', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=NL', 'proto': 'http'},
+    {'name': 'ProxyScrape PL', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=PL&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode PL', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=PL', 'proto': 'http'},
+    {'name': 'ProxyScrape CA', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=CA&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode CA', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=CA', 'proto': 'http'},
+    {'name': 'ProxyScrape AU', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=AU&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode AU', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=AU', 'proto': 'http'},
+    {'name': 'ProxyScrape TW', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=TW&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'Geonode TW', 'url': 'https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country=TW', 'proto': 'http'},
+    {'name': 'ProxyScrape VN', 'url': 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=VN&ssl=all&anonymity=all', 'proto': 'http'},
+    {'name': 'ALIILAPRO HTTP', 'url': 'https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/http.txt', 'proto': 'http'},
+    {'name': 'ALIILAPRO SOCKS4', 'url': 'https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/socks4.txt', 'proto': 'socks4'},
+    {'name': 'ALIILAPRO SOCKS5', 'url': 'https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/socks5.txt', 'proto': 'socks5'},
+    {'name': 'nguclb HTTP', 'url': 'https://raw.githubusercontent.com/nguclb/ProxyList/main/http.txt', 'proto': 'http'},
+    {'name': 'nguclb SOCKS4', 'url': 'https://raw.githubusercontent.com/nguclb/ProxyList/main/socks4.txt', 'proto': 'socks4'},
+    {'name': 'nguclb SOCKS5', 'url': 'https://raw.githubusercontent.com/nguclb/ProxyList/main/socks5.txt', 'proto': 'socks5'},
+    {'name': 'elliottophellia HTTP', 'url': 'https://raw.githubusercontent.com/elliottophellia/proxy-list/main/http.txt', 'proto': 'http'},
+    {'name': 'elliottophellia SOCKS4', 'url': 'https://raw.githubusercontent.com/elliottophellia/proxy-list/main/socks4.txt', 'proto': 'socks4'},
+    {'name': 'elliottophellia SOCKS5', 'url': 'https://raw.githubusercontent.com/elliottophellia/proxy-list/main/socks5.txt', 'proto': 'socks5'},
+    {'name': 'HyperBeast HTTP', 'url': 'https://raw.githubusercontent.com/HyperBeast/Proxy-List/main/http.txt', 'proto': 'http'},
+    {'name': 'RK2002 HTTP', 'url': 'https://raw.githubusercontent.com/rk2002/Proxy-List/main/http.txt', 'proto': 'http'},
+    {'name': 'RK2002 SOCKS4', 'url': 'https://raw.githubusercontent.com/rk2002/Proxy-List/main/socks4.txt', 'proto': 'socks4'},
+    {'name': 'RK2002 SOCKS5', 'url': 'https://raw.githubusercontent.com/rk2002/Proxy-List/main/socks5.txt', 'proto': 'socks5'},
+    {'name': 'Mertguvel SOCKS5', 'url': 'https://raw.githubusercontent.com/Mertguvel/Socks5-Proxy-List/main/socks5.txt', 'proto': 'socks5'},
+    {'name': 'spys.me HTTP', 'url': 'https://spys.me/proxy.txt', 'proto': 'http'},
+    {'name': 'multiproxy HTTP', 'url': 'https://multiproxy.org/txt_all/proxy.txt', 'proto': 'http'},
+    {'name': 'proxy-spider HTTP', 'url': 'https://proxy-spider.com/api/proxies.txt', 'proto': 'http'},
 ]
-
-API_SOURCES = [
-    {"name": "ProxyScrape v2 ALL", "url": "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=all&ssl=all&anonymity=all", "proto": "http"},
-    {"name": "ProxyScrape v2 HTTP", "url": "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all", "proto": "http"},
-    {"name": "ProxyScrape v2 SOCKS4", "url": "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks4&timeout=10000&country=all&ssl=all&anonymity=all", "proto": "socks4"},
-    {"name": "ProxyScrape v2 SOCKS5", "url": "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=10000&country=all&ssl=all&anonymity=all", "proto": "socks5"},
-    {"name": "ProxyScrape v2 HTTP elite", "url": "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=all&ssl=yes&anonymity=elite", "proto": "http"},
-    {"name": "ProxyScrape v2 getproxies", "url": "https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all", "proto": "http"},
-    {"name": "ProxyScrape v3 ALL", "url": "https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&timeout=10000&protocol=all", "proto": "http"},
-    {"name": "ProxyScrape v3 HTTP", "url": "https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&timeout=10000&protocol=http", "proto": "http"},
-    {"name": "ProxyScrape v3 SOCKS4", "url": "https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&timeout=10000&protocol=socks4", "proto": "socks4"},
-    {"name": "ProxyScrape v3 SOCKS5", "url": "https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&timeout=10000&protocol=socks5", "proto": "socks5"},
-    {"name": "ProxyScrape v4", "url": "https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&proxy_format=ipport&format=text", "proto": "http"},
-    {"name": "Geonode HTTP p1", "url": "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc&protocols=http%2Chttps", "proto": "http"},
-    {"name": "Geonode SOCKS p1", "url": "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc&protocols=socks4%2Csocks5", "proto": "socks5"},
-    {"name": "Geonode HTTP p2", "url": "https://proxylist.geonode.com/api/proxy-list?limit=500&page=2&sort_by=lastChecked&sort_type=desc&protocols=http%2Chttps", "proto": "http"},
-    {"name": "Geonode HTTP p3", "url": "https://proxylist.geonode.com/api/proxy-list?limit=500&page=3&sort_by=lastChecked&sort_type=desc&protocols=http%2Chttps", "proto": "http"},
-    {"name": "ProxyList.download HTTP", "url": "https://www.proxy-list.download/api/v1/get?type=http", "proto": "http"},
-    {"name": "ProxyList.download HTTPS", "url": "https://www.proxy-list.download/api/v1/get?type=https", "proto": "http"},
-    {"name": "ProxyList.download SOCKS4", "url": "https://www.proxy-list.download/api/v1/get?type=socks4", "proto": "socks4"},
-    {"name": "ProxyList.download SOCKS5", "url": "https://www.proxy-list.download/api/v1/get?type=socks5", "proto": "socks5"},
-    {"name": "ProxyList.download v2 hs", "url": "https://www.proxy-list.download/api/v2/get?l=en&t=hs", "proto": "http"},
-    {"name": "HProxy", "url": "https://hproxy.com/api/proxy-list?format=txt", "proto": "http"},
-    {"name": "CoolProxy", "url": "https://cool-proxy.net/proxies.json", "proto": "http"},
-    {"name": "PubProxy random", "url": "http://pubproxy.com/api/proxy?limit=20&format=txt", "proto": "http"},
-    {"name": "Databay API", "url": "https://databay.com/api/v1/proxy-list?format=txt&limit=1000", "proto": "http"},
-]
-
-HTML_SOURCES = [
-    {"name": "free-proxy-list.net", "url": "https://free-proxy-list.net/", "proto": "http"},
-    {"name": "sslproxies.org", "url": "https://www.sslproxies.org/", "proto": "http"},
-    {"name": "us-proxy.org", "url": "https://www.us-proxy.org/", "proto": "http"},
-    {"name": "socks-proxy.net", "url": "https://www.socks-proxy.net/", "proto": "socks5"},
-    {"name": "spys.one HTTP", "url": "https://spys.one/en/http-proxy-list/", "proto": "http"},
-    {"name": "spys.one SOCKS", "url": "https://spys.one/en/socks-proxy-list/", "proto": "socks5"},
-    {"name": "hidemy.name HTTP", "url": "https://hidemy.name/en/proxy-list/?type=hs", "proto": "http"},
-    {"name": "hidemy.name SOCKS", "url": "https://hidemy.name/en/proxy-list/?type=45", "proto": "socks5"},
-    {"name": "proxynova", "url": "https://www.proxynova.com/proxy-server-list/", "proto": "http"},
-    {"name": "proxylistplus HTTP1", "url": "https://list.proxylistplus.com/Fresh-HTTP-Proxy-List-1", "proto": "http"},
-    {"name": "proxylistplus HTTP2", "url": "https://list.proxylistplus.com/Fresh-HTTP-Proxy-List-2", "proto": "http"},
-    {"name": "proxylistplus HTTP3", "url": "https://list.proxylistplus.com/Fresh-HTTP-Proxy-List-3", "proto": "http"},
-    {"name": "proxylistplus SSL", "url": "https://list.proxylistplus.com/SSL-List-1", "proto": "http"},
-    {"name": "proxylistplus SOCKS", "url": "https://list.proxylistplus.com/SOCKS-List-1", "proto": "socks5"},
-    {"name": "free-proxy.cz", "url": "http://free-proxy.cz/en/proxylist/country/all/http/ping/all", "proto": "http"},
-    {"name": "proxydb", "url": "https://proxydb.net/?protocol=http&protocol=https&protocol=socks4&protocol=socks5", "proto": "http"},
-    # ---- nguồn VN trong r.txt ----
-    {"name": "VN ProxyNova", "url": "https://www.proxynova.com/proxy-server-list/country-vn/", "proto": "http"},
-    {"name": "VN Spys", "url": "https://spys.one/free-proxy-list/VN/", "proto": "http"},
-    {"name": "VN HideMyName", "url": "https://hidemy.name/en/proxy-list/?country=VN", "proto": "http"},
-    {"name": "VN FreeProxy", "url": "https://www.freeproxy.world/?country=VN&type=http&page=1", "proto": "http"},
-    {"name": "VN ProxyScrape", "url": "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country=VN&ssl=all&anonymity=all", "proto": "http"},
-    {"name": "VN Geonode", "url": "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc&country=VN", "proto": "http"},
-    {"name": "VN ProxyList.download", "url": "https://www.proxy-list.download/api/v1/get?type=http&country=VN", "proto": "http"},
-]
-
-# ---- theo quốc gia (ProxyScrape + Geonode cho 34 nước) ----
-_COUNTRIES = ["US", "CN", "ID", "BR", "IN", "RU", "DE", "FR", "GB", "JP", "KR",
-              "TH", "MY", "SG", "PH", "BD", "PK", "TR", "UA", "MX", "AR", "CL",
-              "CO", "ZA", "EG", "NG", "IT", "ES", "NL", "PL", "CA", "AU", "TW", "VN"]
-COUNTRY_SOURCES = []
-for _c in _COUNTRIES:
-    COUNTRY_SOURCES.append({"name": f"ProxyScrape {_c}", "url": f"https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country={_c}&ssl=all&anonymity=all", "proto": "http"})
-    COUNTRY_SOURCES.append({"name": f"Geonode {_c}", "url": f"https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country={_c}", "proto": "http"})
-
 
 
 def load_links(paths=("link.txt", "uploads/link.txt")):
@@ -292,7 +317,7 @@ class ProxyMiner:
         self.lock = threading.Lock()
         self.all_proxies = []
         self.used_ips = set()
-        self.sources = GITHUB_SOURCES + API_SOURCES + HTML_SOURCES + COUNTRY_SOURCES
+        self.sources = ALL_PROXY_SOURCES
         self.total_sources = len(self.sources)
 
     def _new_session(self):
@@ -337,11 +362,8 @@ class ProxyMiner:
             else:
                 proxies_raw = [l.strip() for l in text.splitlines() if ":" in l]
 
-            # chuẩn hoá + lọc (giới hạn mỗi nguồn + tổng để giữ tốc độ)
-            added = 0
+            # chuẩn hoá + lọc
             for p in proxies_raw:
-                if added >= MAX_PER_SOURCE:
-                    break
                 p = p.strip()
                 if "://" in p:
                     p = p.split("://")[-1]
@@ -351,9 +373,8 @@ class ProxyMiner:
                 ip, port = p.rsplit(":", 1)
                 if not (0 < int(port) < 65536):
                     continue
+                # ưu tiên proxy http/https khi trùng IP
                 with self.lock:
-                    if len(self.all_proxies) >= MAX_TOTAL:
-                        break
                     if ip in self.used_ips:
                         continue
                     self.used_ips.add(ip)
@@ -363,7 +384,6 @@ class ProxyMiner:
                         "proto": source["proto"],
                         "source": source["name"],
                     })
-                    added += 1
         except Exception:
             pass
 
@@ -377,7 +397,7 @@ class ProxyMiner:
             self.all_proxies = []
             self.used_ips = set()
         print(Grad.hot(f"🌟 ĐÀO {self.total_sources} NGUỒN PROXY WORLDWIDE"))
-        with ThreadPoolExecutor(max_workers=min(120, self.total_sources)) as ex:
+        with ThreadPoolExecutor(max_workers=min(60, self.total_sources)) as ex:
             fs = [ex.submit(self.source_worker, s, i, self.total_sources)
                   for i, s in enumerate(self.sources, 1)]
             for f in as_completed(fs):
@@ -408,26 +428,12 @@ class ProxyMiner:
     def filter_alive(self):
         if not self.all_proxies:
             return []
-        pool = self.all_proxies
-        # lấy mẫu cân bằng theo nguồn nếu quá nhiều -> vẫn đa dạng, lọc nhanh
-        if len(pool) > MAX_FILTER:
-            by_src = {}
-            for p in pool:
-                by_src.setdefault(p["source"], []).append(p)
-            per = max(1, MAX_FILTER // len(by_src))
-            pool = []
-            for src, items in by_src.items():
-                pool.extend(items[:per])
-            random.shuffle(pool)
-            pool = pool[:MAX_FILTER]
-            print(Grad.gold(f"⚖️ Lấy mẫu {len(pool)} proxy cân bằng từ {len(by_src)} nguồn để lọc"))
-        print(Grad.cold(f"🔍 CHECK {len(pool)} PROXY (1 PROXY = 1 LUỒNG)"))
+        print(Grad.cold(f"🔍 CHECK {len(self.all_proxies)} PROXY (1 PROXY = 1 LUỒNG)"))
         results = []
-        total = len(pool)
-        with ThreadPoolExecutor(max_workers=300) as ex:
-            fs = [ex.submit(self.test_worker, p, i, total, results)
-                  for i, p in enumerate(pool, 1)]
-            fs = [ex.submit(self.test_worker, p, i, total, results)
+        total = len(self.all_proxies)
+        completed_counter = [0]  # mutable int
+        with ThreadPoolExecutor(max_workers=200) as ex:
+            fs = [ex.submit(self.test_worker, p, completed_counter, total, results)
                   for i, p in enumerate(self.all_proxies, 1)]
             for f in as_completed(fs):
                 pass
@@ -543,7 +549,7 @@ def banner():
  |__  |/ /   / __ \|  \/  _  |
    / /| ' /  / /_/ /| |\/| | |  -- ZKAI FARM DA LINK --
   / /_| . \  / ____/ | |  | | |     upgrade r2: link.txt
- /____/|_|\_\/_/      |_|  |_| |     +130 nguon proxy
+ /____/|_|\_\/_/      |_|  |_| |     +190 nguon proxy
 """))
     print(Grad.gold("=== r2.py - doc link.txt, farm nhieu link song song ==="))
 
