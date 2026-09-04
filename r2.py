@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-r2.py — ZKAI farm đa link (upgrade từ r.txt)
+r34.py — ZKAI farm đa link (dùng 291 nguồn proxy nhúng sẵn)
 - Đọc danh sách link từ link.txt, round-robin qua từng proxy
-- Đào proxy từ ~130 nguồn free (github + api + html + quốc gia)
-- Gắn đúng protocol (http/https/socks4/socks5) -> bắt được nhiều proxy sống hơn
-- Test timeout nới lên 6s + click retry 2 lần -> tỷ lệ sống cao
+- Đào proxy từ ALL_PROXY_SOURCES (đã nhúng)
+- Gắn đúng protocol (http/https/socks4/socks5)
+- Test timeout 6s + retry 2 lần
 - Auto chạy, không hỏi link, không hỏi key
 """
 
@@ -29,12 +29,12 @@ requests.packages.urllib3.disable_warnings()
 
 # ==================== PROXY PROTOCOL SUPPORT ====================
 try:
-    import socks  # PySocks — cần cho socks4/socks5
+    import socks
 except ImportError:
     print("[*] Cài PySocks cho proxy SOCKS...")
     subprocess.run([sys.executable, "-m", "pip", "install", "-q", "PySocks"], check=False)
     try:
-        import socks  # noqa
+        import socks
     except ImportError:
         print("[!] Không cài được PySocks — chỉ dùng proxy http/https.")
 
@@ -46,7 +46,7 @@ except ImportError:
     from bs4 import BeautifulSoup
 
 
-# ==================== GRADIENT UI (giữ style ZKAI) ====================
+# ==================== GRADIENT UI ====================
 class Grad:
     @staticmethod
     def _rgb(r, g, b):
@@ -92,14 +92,8 @@ class Grad:
             return Grad._rgb(int(255 * (1 - (percent - 33) / 33)), 220, 60)
         return Grad._rgb(60, 255, int(200 * (1 - (percent - 66) / 34)))
 
-# ==================== PROXY SOURCES ====================
-# proto: http/https -> http:// ; socks4 -> socks4:// ; socks5 -> socks5://
-# Giới hạn mỗi nguồn + tổng để giữ tốc độ lọc sống
 
-MAX_PER_SOURCE = 15000000
-MAX_TOTAL = 60000
-MAX_FILTER = 15000000  # giới hạn số proxy đem đi lọc sống mỗi cycle (cân bằng theo nguồn)
-
+# ==================== NHÚNG 291 NGUỒN PROXY (PASTE VÀO ĐÂY) ====================
 ALL_PROXY_SOURCES = [
     {'name': 'ALIILAPRO HTTP', 'url': '@url:`https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/http.txt`', 'proto': 'http'}, 
     {'name': 'ALIILAPRO SOCKS4', 'url': '@url:`https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/socks4.txt`', 'proto': 'socks4'}, 
@@ -394,17 +388,13 @@ ALL_PROXY_SOURCES = [
     {'name': 'vmheaven SOCKS5', 'url': '@url:`https://raw.githubusercontent.com/vmheaven/VMHeaven-Free-Proxy-Updated/main/socks5.txt`', 'proto': 'socks5'}, 
 ]
 
-# ---- theo quốc gia (ProxyScrape + Geonode cho 34 nước) ----
-_COUNTRIES = ["US", "CN", "ID", "BR", "IN", "RU", "DE", "FR", "GB", "JP", "KR",
-              "TH", "MY", "SG", "PH", "BD", "PK", "TR", "UA", "MX", "AR", "CL",
-              "CO", "ZA", "EG", "NG", "IT", "ES", "NL", "PL", "CA", "AU", "TW", "VN"]
-COUNTRY_SOURCES = []
-for _c in _COUNTRIES:
-    COUNTRY_SOURCES.append({"name": f"ProxyScrape {_c}", "url": f"https://api.proxyscrape.com/v2/?request=displayproxies&protocol=all&timeout=10000&country={_c}&ssl=all&anonymity=all", "proto": "http"})
-    COUNTRY_SOURCES.append({"name": f"Geonode {_c}", "url": f"https://proxylist.geonode.com/api/proxy-list?limit=300&page=1&sort_by=lastChecked&sort_type=desc&country={_c}", "proto": "http"})
+# ==================== CẤU HÌNH ====================
+MAX_PER_SOURCE = 1500000
+MAX_TOTAL = 60000
+MAX_FILTER = 15000000
 
 
-
+# ==================== HÀM TIỆN ÍCH ====================
 def load_links(paths=("link.txt", "uploads/link.txt")):
     """Đọc danh sách link từ file. Trả list link chuẩn hoá."""
     for path in paths:
@@ -434,8 +424,13 @@ class ProxyMiner:
         self.lock = threading.Lock()
         self.all_proxies = []
         self.used_ips = set()
-        self.sources = GITHUB_SOURCES + API_SOURCES + HTML_SOURCES + COUNTRY_SOURCES
+        # Kiểm tra ALL_PROXY_SOURCES
+        if not ALL_PROXY_SOURCES:
+            print(Grad.hot("❌ LỖI: ALL_PROXY_SOURCES trống! Bạn cần paste danh sách 291 nguồn proxy vào code."))
+            sys.exit(1)
+        self.sources = ALL_PROXY_SOURCES
         self.total_sources = len(self.sources)
+        print(Grad.forest(f"[*] Đã nạp {self.total_sources} nguồn proxy."))
 
     def _new_session(self):
         s = requests.Session()
@@ -448,7 +443,6 @@ class ProxyMiner:
         ])})
         return s
 
-    # --- đào từng nguồn ---
     def source_worker(self, source, idx, total):
         try:
             session = self._new_session()
@@ -459,7 +453,6 @@ class ProxyMiner:
             proxies_raw = []
             ct = resp.headers.get("Content-Type", "")
 
-            # JSON
             if "json" in ct or text[:1] in ("{", "["):
                 try:
                     data = resp.json()
@@ -479,7 +472,6 @@ class ProxyMiner:
             else:
                 proxies_raw = [l.strip() for l in text.splitlines() if ":" in l]
 
-            # chuẩn hoá + lọc (giới hạn mỗi nguồn + tổng để giữ tốc độ)
             added = 0
             for p in proxies_raw:
                 if added >= MAX_PER_SOURCE:
@@ -528,7 +520,6 @@ class ProxyMiner:
         print(Grad.forest(f"✅ Đào được {len(self.all_proxies)} proxy"))
         return self.all_proxies
 
-    # --- test proxy sống ---
     def test_worker(self, info, idx, total, results):
         scheme = {"http": "http", "https": "http", "socks4": "socks4", "socks5": "socks5"}.get(info["proto"], "http")
         proxies = {"http": f"{scheme}://{info['proxy']}", "https": f"{scheme}://{info['proxy']}"}
@@ -551,7 +542,6 @@ class ProxyMiner:
         if not self.all_proxies:
             return []
         pool = self.all_proxies
-        # lấy mẫu cân bằng theo nguồn nếu quá nhiều -> vẫn đa dạng, lọc nhanh
         if len(pool) > MAX_FILTER:
             by_src = {}
             for p in pool:
@@ -569,8 +559,6 @@ class ProxyMiner:
         with ThreadPoolExecutor(max_workers=300) as ex:
             fs = [ex.submit(self.test_worker, p, i, total, results)
                   for i, p in enumerate(pool, 1)]
-            fs = [ex.submit(self.test_worker, p, i, total, results)
-                  for i, p in enumerate(self.all_proxies, 1)]
             for f in as_completed(fs):
                 pass
         print()
@@ -582,7 +570,7 @@ class ProxyMiner:
         return results
 
 
-# ==================== CLICKER (đa link) ====================
+# ==================== CLICKER ====================
 class Clicker:
     def __init__(self, links):
         self.links = links
@@ -615,11 +603,10 @@ class Clicker:
                 return
             self.used_ips.add(ip)
 
-        # round-robin: mỗi proxy click 1 link
         link = self.links[idx % len(self.links)]
         alias = extract_alias(link)
 
-        for attempt in range(2):  # retry 1 lần cho proxy chậm/flake
+        for attempt in range(2):
             try:
                 s = self._session(info)
                 r = s.get(link, timeout=15)
@@ -684,10 +671,10 @@ def banner():
   ____  __    ____  __  _____
  |__  |/ /   / __ \|  \/  _  |
    / /| ' /  / /_/ /| |\/| | |  -- ZKAI FARM DA LINK --
-  / /_| . \  / ____/ | |  | | |     upgrade r2: link.txt
- /____/|_|\_\/_/      |_|  |_| |     +130 nguon proxy
+  / /_| . \  / ____/ | |  | | |     nhúng 291 nguồn proxy
+ /____/|_|\_\/_/      |_|  |_| |     + link.txt
 """))
-    print(Grad.gold("=== r2.py - doc link.txt, farm nhieu link song song ==="))
+    print(Grad.gold("=== r34.py - doc link.txt, farm nhieu link song song ==="))
 
 
 def main():
@@ -697,6 +684,7 @@ def main():
         print(Grad.hot("❌ Không thấy link.txt! Tạo file với mỗi link 1 dòng."))
         print(Grad.cold("Ví dụ:\nhttps://vuotnhanh.com/GL48\nhttps://vuotnhanh.com/DMxu"))
         return
+
     print(Grad.gold(f"📄 Nạp {len(links)} link từ link.txt"))
     for i, ln in enumerate(links, 1):
         print(f"   {i}. {ln}  (alias: {extract_alias(ln)})")
